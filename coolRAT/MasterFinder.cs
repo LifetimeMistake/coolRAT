@@ -16,13 +16,15 @@ namespace coolRAT.Slave
     {
         public Client LocalClient;
         public IPEndPoint RemoteServer;
-        public bool IsEmpty;
+        public TcpConnection MainConnection;
+        public bool HasValues;
 
-        public MasterServerInfo(Client localClient, IPEndPoint remoteServer)
+        public MasterServerInfo(Client localClient, IPEndPoint remoteServer, TcpConnection mainConnection) : this()
         {
             LocalClient = localClient;
             RemoteServer = remoteServer;
-            IsEmpty = false;
+            MainConnection = mainConnection;
+            HasValues = true;
         }
     }
     public static class MasterFinder
@@ -55,7 +57,7 @@ namespace coolRAT.Slave
                     {
                         Console.WriteLine("Success");
                         Client client = new Client(response.UniqueClientId, new TcpPipes(conn, null, null));
-                        MasterServerInfo inf = new MasterServerInfo(client, conn.Client.Client.RemoteEndPoint as IPEndPoint);
+                        MasterServerInfo inf = new MasterServerInfo(client, conn.Client.Client.RemoteEndPoint as IPEndPoint, conn);
                         return inf;
                     }
                     

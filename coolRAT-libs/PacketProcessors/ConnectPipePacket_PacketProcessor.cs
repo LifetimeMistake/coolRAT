@@ -28,12 +28,13 @@ namespace coolRAT.Libs.PacketProcessors
             };
         }
 
-        public void Process()
+        public bool Process()
         {
             if (!ConnectedClients.ContainsKey(Packet.ClientId))
             {
                 PipeConnectedPacket result_fail = new PipeConnectedPacket(Packet.ClientId, Packet.PipeType, false);
                 Connection.SendPacket(result_fail);
+                return false;
             }
 
             switch (Packet.PipeType)
@@ -53,6 +54,7 @@ namespace coolRAT.Libs.PacketProcessors
             }
             PipeConnectedPacket result_success = new PipeConnectedPacket(Packet.ClientId, Packet.PipeType, true);
             Connection.SendPacket(result_success);
+            return true;
         }
     }
 }

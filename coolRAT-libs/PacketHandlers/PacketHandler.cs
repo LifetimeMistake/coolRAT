@@ -11,6 +11,6 @@ namespace coolRAT.Libs.PacketHandlers
             Connection = connection;
         }
 
-        public abstract void HandlePacket(string packet_raw);
+        public abstract void HandlePacket(object sender, string packet_raw);
     }
 }

