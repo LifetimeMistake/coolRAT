@@ -46,12 +46,12 @@ namespace coolRAT.Master
                 SetShellStatePacket setShellState = new SetShellStatePacket(SlaveClient.UniqueId, Shell_UniqueId, ShellState.Running);
                 Shell_Connection.SendPacket(setShellState);
             });
-            
+
         }
         public bool EventHandled = false;
         private void ShellEmulator_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.Enter) 
+            if (e.KeyCode == Keys.Enter)
             {
                 Input_Buffer.Append("\n");
                 EventHandled = true;
@@ -62,7 +62,7 @@ namespace coolRAT.Master
 
         private void ShellEmulator_KeyPress(object sender, KeyPressEventArgs e)
         {
-             if(EventHandled)
+            if (EventHandled)
             {
                 EventHandled = false;
                 return;
@@ -97,7 +97,7 @@ namespace coolRAT.Master
 
         public void Clock_Tick()
         {
-            while(true)
+            while (true)
             {
                 Thread.Sleep(Buffer_Timeout);
                 if (!ResetClock)
@@ -133,9 +133,9 @@ namespace coolRAT.Master
                 {
                     ShellEmulator.Parent.Invoke(new Action(() => {
                         char[] char_arr = shell_IO_changed.Change.ToCharArray();
-                        foreach(char chr in char_arr)
+                        foreach (char chr in char_arr)
                         {
-                            switch(chr)
+                            switch (chr)
                             {
                                 case '\b':
                                     ShellEmulator.Text = new string(ShellEmulator.Text.ToCharArray().Reverse().Skip(1).Reverse().ToArray());
