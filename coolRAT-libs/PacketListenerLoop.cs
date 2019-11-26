@@ -28,6 +28,7 @@ namespace coolRAT.Libs
                 string packet_raw = Connection.ReadPacket();
                 Task.Run(() => Handler.HandlePacket(this, packet_raw));
             }
+            AbortLoop = false;
         }
 
         public static PacketListenerLoop Spawn(TcpConnection conn, PacketHandler handler)

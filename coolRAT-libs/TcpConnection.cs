@@ -42,7 +42,7 @@ namespace coolRAT.Libs
             if(packet.Type == "Shell_IO_ChangedPacket")
             {
                 Shell_IO_ChangedPacket packet__ = packet as Shell_IO_ChangedPacket;
-                Console.WriteLine($"ChangeType: {packet__.ChangeType}; Change: {packet__.Change}");
+                //Console.WriteLine($"ChangeType: {packet__.ChangeType}; Change: {packet__.Change}");
             }
         }
 
@@ -55,7 +55,7 @@ namespace coolRAT.Libs
             if (packet.Type == "Shell_IO_ChangedPacket")
             {
                 Shell_IO_ChangedPacket packet__ = Shell_IO_ChangedPacket.Deserialize(json);
-                Console.WriteLine($"ChangeType: {packet__.ChangeType}; Change: {packet__.Change}");
+                //Console.WriteLine($"ChangeType: {packet__.ChangeType}; Change: {packet__.Change}");
             }
             return json;
         }
@@ -98,6 +98,7 @@ namespace coolRAT.Libs
                     break;
                 }
             }
+            //Console.WriteLine($"Received: '{received}'");
             return received;
         }
 

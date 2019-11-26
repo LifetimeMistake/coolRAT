@@ -19,6 +19,7 @@ namespace coolRAT.Slave
         public static PacketListenerLoop MainListenerLoop;
         public static PacketListenerLoop ShellListenerLoop;
         public static IPEndPoint LocalEndpoint;
+        public static PingService PingService;
 
         public static void FindLocalEndPoint()
         {
