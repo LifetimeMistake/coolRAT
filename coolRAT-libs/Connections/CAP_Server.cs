@@ -56,7 +56,7 @@ namespace coolRAT.Libs.Connections
                         newConnection.SendPacket(registeredPacket);
                         return;
                     }
-                    if (packet.Type == "CAP_LinkConnectionpacket")
+                    if (packet.Type == "CAP_LinkConnectionPacket")
                     {
                         newConnection.WaitReadyMessage();
                         CAP_LinkConnectionPacket linkConnectionPacket = CAP_LinkConnectionPacket.Deserialize(packet_raw);
