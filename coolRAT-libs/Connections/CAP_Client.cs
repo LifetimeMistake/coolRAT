@@ -12,21 +12,16 @@ namespace coolRAT.Libs.Connections
     /// </summary>
     public class CAP_Client
     {
-        public TcpConnection MainConnection;
-        public TcpConnection IncomingConnection;
-        public TcpConnection OutgoingConnection;
         public IPEndPoint ServerEndPoint;
 
         public CAP_Client(IPEndPoint serverEndPoint)
         {
             ServerEndPoint = serverEndPoint;
-            MainConnection = new TcpConnection();
-            IncomingConnection = new TcpConnection();
-            OutgoingConnection = new TcpConnection();
         }
 
         public Guid RegisterClient()
         {
+            TcpConnection MainConnection = new TcpConnection();
             if (!MainConnection.Connect(ServerEndPoint)) return Guid.Empty;
             CAP_RegisterClientPacket registerClientPacket = new CAP_RegisterClientPacket();
             MainConnection.WaitReadyMessage();
@@ -42,6 +37,42 @@ namespace coolRAT.Libs.Connections
             }
             MainConnection.Client.Close();
             return Guid.NewGuid();
+        }
+
+        public Client CreateClient(Guid authorizationTicket)
+        {
+            if (authorizationTicket == Guid.Empty) return null;
+            TcpConnection incoming = new TcpConnection();
+            TcpConnection outgoing = new TcpConnection();
+            CAP_LinkConnectionPacket linkConnectionPacket;
+            CAP_ConnectionLinkedPacket connectionLinkedPacket;
+            Packet packet;
+            string packet_raw = "";
+            Client client = new Client(authorizationTicket);
+            if (!incoming.Connect(ServerEndPoint)) return null;
+            linkConnectionPacket = new CAP_LinkConnectionPacket(authorizationTicket, ConnectionType.Incoming);
+            incoming.WaitReadyMessage();
+            incoming.SendPacket(linkConnectionPacket);
+            incoming.SendReadyMessage();
+            packet_raw = incoming.ReceivePacket();
+            packet = Packet.Deserialize(packet_raw);
+            if (packet.Type != "CAP_ConnectionLinkedPacket") return null;
+            connectionLinkedPacket = CAP_ConnectionLinkedPacket.Deserialize(packet_raw);
+            if (!connectionLinkedPacket.Success) return null;
+            client.Connection.IncomingConnection = incoming;
+            if (!outgoing.Connect(ServerEndPoint)) return null;
+            linkConnectionPacket = new CAP_LinkConnectionPacket(authorizationTicket, ConnectionType.Outgoing);
+            outgoing.WaitReadyMessage();
+            outgoing.SendPacket(linkConnectionPacket);
+            outgoing.SendReadyMessage();
+            packet_raw = outgoing.ReceivePacket();
+            packet = Packet.Deserialize(packet_raw);
+            if (packet.Type != "CAP_ConnectionLinkedPacket") return null;
+            connectionLinkedPacket = CAP_ConnectionLinkedPacket.Deserialize(packet_raw);
+            if (!connectionLinkedPacket.Success) return null;
+            client.Connection.OutgoingConnection = outgoing;
+
+            return client;
         }
     }
 }
