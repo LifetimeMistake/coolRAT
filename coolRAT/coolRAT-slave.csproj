@@ -46,12 +46,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MasterFinder.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Shell_PacketHandler.cs" />
-    <Compile Include="SlaveGlobalData.cs" />
-    <Compile Include="Slave_PacketHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

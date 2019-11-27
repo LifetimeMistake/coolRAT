@@ -7,11 +7,13 @@ namespace coolRAT.Libs.Packets
 {
     public class Packet
     {
-        public Guid UniqueId = Guid.NewGuid();
-        public string Type;
+        public Guid UniquePacketId = Guid.NewGuid();
+        public Guid UniqueClientId;
+        public string Type = "Packet";
         public DateTime TimeStamp = DateTime.Now;
-        public Packet()
+        public Packet(Guid uniqueClientId)
         {
+            UniqueClientId = uniqueClientId;
             Type = "Packet";
         }
 
