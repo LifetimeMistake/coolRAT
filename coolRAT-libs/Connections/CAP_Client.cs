@@ -47,7 +47,7 @@ namespace coolRAT.Libs.Connections
             CAP_LinkConnectionPacket linkConnectionPacket;
             CAP_ConnectionLinkedPacket connectionLinkedPacket;
             Packet packet;
-            string packet_raw = "";
+            string packet_raw;
             Client client = new Client(authorizationTicket);
             if (!incoming.Connect(ServerEndPoint)) return null;
             linkConnectionPacket = new CAP_LinkConnectionPacket(authorizationTicket, ConnectionType.Incoming);
@@ -71,7 +71,7 @@ namespace coolRAT.Libs.Connections
             connectionLinkedPacket = CAP_ConnectionLinkedPacket.Deserialize(packet_raw);
             if (!connectionLinkedPacket.Success) return null;
             client.Connection.OutgoingConnection = outgoing;
-
+            client.Connection.StartAll();
             return client;
         }
     }

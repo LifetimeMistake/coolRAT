@@ -69,10 +69,10 @@ namespace coolRAT.Libs.Connections
                         switch(linkConnectionPacket.ConnectionType)
                         {
                             case ConnectionType.Incoming:
-                                PartialClients[linkConnectionPacket.UniqueClientId].Connection.IncomingConnection = newConnection;
+                                PartialClients[linkConnectionPacket.UniqueClientId].Connection.OutgoingConnection = newConnection;
                                 break;
                             case ConnectionType.Outgoing:
-                                PartialClients[linkConnectionPacket.UniqueClientId].Connection.OutgoingConnection = newConnection;
+                                PartialClients[linkConnectionPacket.UniqueClientId].Connection.IncomingConnection = newConnection;
                                 break;
                         }
 
@@ -83,6 +83,7 @@ namespace coolRAT.Libs.Connections
                         if(c.Connection.IncomingConnection != null && c.Connection.OutgoingConnection != null)
                         {
                             // Client handshake complete
+                            c.Connection.StartAll();
                             PartialClients.Remove(c.UniqueId);
                             if (OnClientConnected == null) return;
                             ClientConnectedEventArgs args = new ClientConnectedEventArgs(c);
@@ -98,8 +99,10 @@ namespace coolRAT.Libs.Connections
         public void Start()
         {
             if (ConnectionAccepterThread != null) if (ConnectionAccepterThread.IsAlive) Stop();
-            ConnectionAccepterThread = new Thread(new ThreadStart(ListenerLoop));
-            ConnectionAccepterThread.IsBackground = true;
+            ConnectionAccepterThread = new Thread(new ThreadStart(ListenerLoop))
+            {
+                IsBackground = true
+            };
             Listener.Start();
             ConnectionAccepterThread.Start();
         }

