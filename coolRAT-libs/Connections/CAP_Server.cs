@@ -87,6 +87,7 @@ namespace coolRAT.Libs.Connections
                             if (OnClientConnected == null) return;
                             ClientConnectedEventArgs args = new ClientConnectedEventArgs(c);
                             OnClientConnected(this, args);
+                            Console.WriteLine("Partial client removed: Client connection finalized");
                         }
                     }
                 });

