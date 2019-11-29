@@ -12,12 +12,14 @@ namespace coolRAT.Libs
         public Guid UniqueId;
         public DateTime ConnectionDate;
         public DualTcpConnection Connection;
+        public PingService ClientPingService;
 
         public Client(Guid uniqueId)
         {
             UniqueId = uniqueId;
             ConnectionDate = DateTime.Now;
             Connection = new DualTcpConnection();
+            ClientPingService = new PingService(this);
         }
 
         public void SendPacket(Packet packet)
