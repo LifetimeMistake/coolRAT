@@ -5,7 +5,7 @@ using System.Text;
 
 namespace coolRAT.Libs.Packets
 {
-    class RequestFramePacketTemporary : Packet
+    public class RequestFramePacketTemporary : Packet
     {
         [JsonConstructor]
         public RequestFramePacketTemporary(Guid clientId) : base(clientId)

