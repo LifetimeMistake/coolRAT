@@ -37,15 +37,20 @@
             // 
             // ImageBox
             // 
+            this.ImageBox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.ImageBox.BackColor = System.Drawing.Color.Black;
             this.ImageBox.Location = new System.Drawing.Point(12, 12);
             this.ImageBox.Name = "ImageBox";
             this.ImageBox.Size = new System.Drawing.Size(687, 364);
+            this.ImageBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.ImageBox.TabIndex = 0;
             this.ImageBox.TabStop = false;
             // 
             // Start_Btn
             // 
+            this.Start_Btn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.Start_Btn.Location = new System.Drawing.Point(12, 382);
             this.Start_Btn.Name = "Start_Btn";
             this.Start_Btn.Size = new System.Drawing.Size(75, 23);
@@ -56,6 +61,7 @@
             // 
             // Stop_Btn
             // 
+            this.Stop_Btn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.Stop_Btn.Location = new System.Drawing.Point(93, 382);
             this.Stop_Btn.Name = "Stop_Btn";
             this.Stop_Btn.Size = new System.Drawing.Size(75, 23);
@@ -66,6 +72,7 @@
             // 
             // MouseControl_Checkbox
             // 
+            this.MouseControl_Checkbox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.MouseControl_Checkbox.AutoSize = true;
             this.MouseControl_Checkbox.Enabled = false;
             this.MouseControl_Checkbox.Location = new System.Drawing.Point(606, 386);
@@ -86,6 +93,7 @@
             this.Controls.Add(this.ImageBox);
             this.Name = "ScreenWindow";
             this.Text = "ScreenWindow";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ScreenWindow_FormClosing);
             this.Shown += new System.EventHandler(this.ScreenWindow_Shown);
             ((System.ComponentModel.ISupportInitialize)(this.ImageBox)).EndInit();
             this.ResumeLayout(false);

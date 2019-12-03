@@ -97,6 +97,7 @@ namespace coolRAT.Libs.Connections
         {
             NetworkStream stream = Client.GetStream();
             byte[] bytes = Encoding.UTF8.GetBytes(Data + "\n\n");
+            Console.WriteLine($"Writing {bytes.Length} bytes...");
             stream.Write(bytes, 0, bytes.Length);
         }
         public string ReadRaw()

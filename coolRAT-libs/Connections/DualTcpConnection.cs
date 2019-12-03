@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace coolRAT.Libs.Connections
 {
@@ -67,7 +68,7 @@ namespace coolRAT.Libs.Connections
                     continue;
                 }
 
-                PacketReceiverSubscriptions[packet.Type].Invoke(this, new PacketReceivedEventArgs(packet_raw, packet));
+                Task.Run(() => PacketReceiverSubscriptions[packet.Type].Invoke(this, new PacketReceivedEventArgs(packet_raw, packet)));
             }
         }
 
